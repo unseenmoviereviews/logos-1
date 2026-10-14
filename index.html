@@ -160,45 +160,6 @@ h2{font-size:32px}h3{font-size:22px}
 <div id="bgA" class="bg"></div><div id="bgB" class="bg"></div><div id="shade"></div><div id="grain"></div>
 <div id="app"></div>
 <script>
-/* ===== ядро: код проверки (общее для работ и страницы преподавателя) ===== */
-var G_K = [1116352408, 1899447441, 3049323471, 3921009573, 961987163, 1508970993, 2453635748, 2870763221, 3624381080, 310598401, 607225278, 1426881987, 1925078388, 2162078206, 2614888103, 3248222580, 3835390401, 4022224774, 264347078, 604807628, 770255983, 1249150122, 1555081692, 1996064986, 2554220882, 2821834349, 2952996808, 3210313671, 3336571891, 3584528711, 113926993, 338241895, 666307205, 773529912, 1294757372, 1396182291, 1695183700, 1986661051, 2177026350, 2456956037, 2730485921, 2820302411, 3259730800, 3345764771, 3516065817, 3600352804, 4094571909, 275423344, 430227734, 506948616, 659060556, 883997877, 958139571, 1322822218, 1537002063, 1747873779, 1955562222, 2024104815, 2227730452, 2361852424, 2428436474, 2756734187, 3204031479, 3329325298];
-var G_H = [1779033703, 3144134277, 1013904242, 2773480762, 1359893119, 2600822924, 528734635, 1541459225];
-function gSha256(msg) {
-  var s = unescape(encodeURIComponent(msg)), b = [], i, j;
-  for (i = 0; i < s.length; i++) b.push(s.charCodeAt(i));
-  var bl = b.length * 8; b.push(128);
-  while (b.length % 64 !== 56) b.push(0);
-  b.push(0, 0, 0, 0, (bl >>> 24) & 255, (bl >>> 16) & 255, (bl >>> 8) & 255, bl & 255);
-  var h = G_H.slice(), w = new Array(64);
-  function rr(x, n) { return (x >>> n) | (x << (32 - n)); }
-  for (var o = 0; o < b.length; o += 64) {
-    for (i = 0; i < 16; i++) w[i] = ((b[o + i * 4] << 24) | (b[o + i * 4 + 1] << 16) | (b[o + i * 4 + 2] << 8) | b[o + i * 4 + 3]) | 0;
-    for (i = 16; i < 64; i++) {
-      var s0 = rr(w[i - 15], 7) ^ rr(w[i - 15], 18) ^ (w[i - 15] >>> 3), s1 = rr(w[i - 2], 17) ^ rr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
-      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
-    }
-    var a = h[0], bb = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7];
-    for (i = 0; i < 64; i++) {
-      var S1 = rr(e, 6) ^ rr(e, 11) ^ rr(e, 25), ch = (e & f) ^ (~e & g), t1 = (hh + S1 + ch + G_K[i] + w[i]) | 0;
-      var S0 = rr(a, 2) ^ rr(a, 13) ^ rr(a, 22), mj = (a & bb) ^ (a & c) ^ (bb & c), t2 = (S0 + mj) | 0;
-      hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = bb; bb = a; a = (t1 + t2) | 0;
-    }
-    h[0] = (h[0] + a) | 0; h[1] = (h[1] + bb) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
-    h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
-  }
-  var out = "";
-  for (j = 0; j < 8; j++) out += ("00000000" + (h[j] >>> 0).toString(16)).slice(-8);
-  return out;
-}
-var G_SALT = ["2b55ff", "280de1", "77552e", "6f814e"].join("-");
-function gNorm(s) { return String(s || "").toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9]/g, ""); }
-function gTime(s) { var d = String(s || "").replace(/\D/g, ""); while (d.length < 4) d = "0" + d; return d.slice(-4); }
-function gMakeCode(work, name, group, score, leaves, hhmm) {
-  var msg = G_SALT + "|" + work + "|" + gNorm(name) + "|" + gNorm(group) + "|" + (+score) + "|" + (+leaves) + "|" + gTime(hhmm);
-  var n = parseInt(gSha256(msg).slice(0, 8), 16) % 100000;
-  return ("00000" + n).slice(-5);
-}
-
 /* ===== защита: учёт выходов, запрет копирования, карточка проверки ===== */
 (function () {
   var st = document.createElement("style");
@@ -212,7 +173,9 @@ function gMakeCode(work, name, group, score, leaves, hhmm) {
     "#gtoast.on{transform:translateY(0)}.gnote{font-size:13px;line-height:1.4;opacity:.7;margin:10px 0 0;color:inherit}" +
     ".gcard{margin:14px auto 12px;max-width:380px;padding:14px 14px 12px;border:2px dashed #F2C14E;border-radius:16px;background:rgba(0,0,0,.45);color:#fff;text-align:center}" +
     ".gc-h{font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.22em;text-transform:uppercase;opacity:.8}" +
-    ".gc-code{font:700 46px/1.15 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.18em;color:#FFD36B;margin:6px 0 8px;padding-left:.18em;text-shadow:0 0 18px rgba(255,211,107,.35)}" +
+    ".gc-code{font:700 46px/1.15 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.22em;padding-left:.22em;color:#FFD36B;margin:8px 0 10px;text-shadow:0 0 18px rgba(255,211,107,.35)}" +
+    ".gstat{margin:10px 0 0;font-size:13px;line-height:1.35}.gstat.g-ok{color:#7BE3A0}.gstat.g-wait{color:#F2C14E}.gstat.g-bad{color:#FF8E7F}" +
+    ".gbtn{display:none;margin:8px auto 0;padding:9px 16px;border-radius:10px;border:1px solid #F2C14E;background:transparent;color:#FFD36B;font:600 14px/1 -apple-system,system-ui,sans-serif}.gbtn.on{display:inline-block}" +
     ".gc-rows{text-align:left;font-size:14px;border-top:1px solid rgba(255,255,255,.18);padding-top:6px}" +
     ".gc-rows div{display:flex;justify-content:space-between;gap:12px;padding:3px 0}" +
     ".gc-rows span{opacity:.7;white-space:nowrap}.gc-rows b{font-weight:600;text-align:right;word-break:break-word}" +
@@ -252,20 +215,57 @@ function gToast() {
   clearTimeout(gToastT); gToastT = setTimeout(function () { t.className = ""; }, 3500);
 }
 function gFin2(n) { return (n < 10 ? "0" : "") + n; }
-function gFinish(work, score) {
+var G_URL = "https://script.google.com/macros/s/AKfycbz20ybgl-VjmUEvs-Xv1_217_E6rIaHKvf8jIWEZkEY-i6CFblypmI-xSXilsvMa--bFQ/exec";
+var G_ALPHA = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+function gSurname() { return S.surname || String(S.name || "").replace(/^\s+/, "").split(/\s+/)[0]; }
+function gId() {
+  var out = "", i, a = [];
+  try { var u = new Uint8Array(5); window.crypto.getRandomValues(u); for (i = 0; i < 5; i++) a.push(u[i]); } catch (e) { for (i = 0; i < 5; i++) a.push(Math.floor(Math.random() * 256)); }
+  for (i = 0; i < 5; i++) out += G_ALPHA.charAt(a[i] % 32);
+  return out;
+}
+function gFinish(work, score, total) {
   if (S.fin) return S.fin;
-  var d = new Date(), hhmm = gFin2(d.getHours()) + ":" + gFin2(d.getMinutes()), lv = S.leaves || 0;
-  S.fin = { t: d.getTime(), hhmm: hhmm, score: score, leaves: lv, away: S.awaySec || 0, code: gMakeCode(work, S.name, S.group, score, lv, hhmm) };
-  S.away = 0; gSave(); return S.fin;
+  var d = new Date(), st = S.t0 || S.startedAt || d.getTime();
+  S.fin = { t: d.getTime(), work: work, code: gId(), score: score, total: total, leaves: S.leaves || 0, away: S.awaySec || 0,
+    dt: gFin2(d.getDate()) + "." + gFin2(d.getMonth() + 1) + " " + gFin2(d.getHours()) + ":" + gFin2(d.getMinutes()),
+    min: Math.max(1, Math.round((d.getTime() - st) / 60000)), sent: false };
+  S.away = 0; gSave(); setTimeout(gSend, 50); return S.fin;
+}
+function gStat(cls, txt, btn) {
+  var e = document.getElementById("gstat"), b = document.getElementById("gbtn");
+  if (e) { e.className = "gstat " + cls; e.textContent = txt; }
+  if (b) b.className = "gbtn" + (btn ? " on" : "");
+}
+var gSending = false;
+function gSend() {
+  if (typeof S === "undefined" || !S || !S.fin || S.fin.sent || gSending) return;
+  if (!G_URL) { gStat("g-wait", "Отправка не настроена. Покажите экран преподавателю.", false); return; }
+  gSending = true; gStat("g-wait", "Отправляем результат преподавателю…", false);
+  var f = S.fin, x = new XMLHttpRequest();
+  var body = JSON.stringify({ work: f.work, id: f.code, surname: gSurname(), name: S.name, group: S.group || "", score: f.score, total: f.total,
+    leaves: f.leaves, awaySec: f.away, finished: f.dt, minutes: f.min });
+  x.open("POST", G_URL, true); x.timeout = 20000;
+  x.setRequestHeader("Content-Type", "text/plain;charset=utf-8");
+  function fail() { gSending = false; gStat("g-bad", "Не удалось отправить. Проверьте интернет и нажмите «Отправить ещё раз».", true); }
+  x.onload = function () {
+    var ok = false; try { ok = JSON.parse(x.responseText).ok === true; } catch (e) { }
+    gSending = false;
+    if (ok) { S.fin.sent = true; gSave(); gStat("g-ok", "Результат отправлен преподавателю ✓", false); } else fail();
+  };
+  x.onerror = fail; x.ontimeout = fail;
+  try { x.send(body); } catch (e) { fail(); }
 }
 function gCard() {
   var f = S.fin, m = Math.floor(f.away / 60), s = f.away % 60;
-  return '<div class="gcard"><div class="gc-h">Код проверки</div><div class="gc-code">' + f.code + '</div><div class="gc-rows">' +
+  return '<div class="gcard"><div class="gc-h">Номер работы</div><div class="gc-code">' + f.code + '</div><div class="gc-rows">' +
     '<div><span>Участник</span><b>' + gEsc(S.name) + (S.group ? ", " + gEsc(S.group) : "") + '</b></div>' +
-    '<div><span>Баллы</span><b>' + f.score + '</b></div>' +
+    '<div><span>Баллы</span><b>' + f.score + ' из ' + f.total + '</b></div>' +
     '<div><span>Выходов со страницы</span><b>' + f.leaves + '</b></div>' +
     '<div><span>Вне страницы</span><b>' + m + ":" + gFin2(s) + '</b></div>' +
-    '<div><span>Время</span><b>' + f.hhmm + '</b></div></div>' +
+    '<div><span>Сдано</span><b>' + f.dt + '</b></div></div>' +
+    '<div class="gstat ' + (f.sent ? "g-ok" : "g-wait") + '" id="gstat">' + (f.sent ? "Результат отправлен преподавателю ✓" : "Отправляем результат преподавателю…") + '</div>' +
+    '<button class="gbtn" id="gbtn" data-g="send">Отправить ещё раз</button>' +
     '<p class="gc-n">Покажите этот экран преподавателю</p></div>';
 }
 function gInit() {
@@ -285,8 +285,12 @@ function gInit() {
     var k = String(e.key || "").toLowerCase();
     if (k === "a" || k === "c" || k === "x" || k === "s" || k === "p" || k === "u") e.preventDefault();
   });
+  document.addEventListener("click", function (e) { var el = e.target; while (el && el !== document) { if (el.getAttribute && el.getAttribute("data-g") === "send") { gSend(); return; } el = el.parentNode; } });
+  window.addEventListener("online", gSend);
+  setInterval(function () { if (document.getElementById("gstat")) gSend(); }, 25000);
   if (typeof S !== "undefined" && S && S.away) gBack();
   gPaint();
+  setTimeout(gSend, 400);
 }
 
 var SHIP = "«Логос-1»";
@@ -532,7 +536,7 @@ var OK_W = ["ПРИНЯТО.", "ЛОГИЧНО. ОДОБРЯЮ.", "КУРС ВЕ
 var BAD_W = ["ОШИБКА В КОНТУРЕ.", "НЕЛОГИЧНО. ИСКРЮ.", "ТАК НЕ ЛЕТАЮТ.", "ТРЕВОГА. ПЕРЕСЧИТЫВАЮ КУРС.", "ОТКАЗ. ЛОГИКА НАРУШЕНА."];
 var MID_W = ["ПРИНЯТО ЧАСТИЧНО.", "ПОЧТИ. ОДИН КОНТУР ИСКРИТ."];
 
-var S = null, STEPS = null, ui = {}, draft = { name: "", group: "", err: "" };
+var S = null, STEPS = null, ui = {}, draft = { sur: "", name: "", group: "", err: "" };
 function load() { try { var v = localStorage.getItem(KEY); if (v) S = JSON.parse(v); } catch (e) { S = null; } }
 function save() { try { if (S) localStorage.setItem(KEY, JSON.stringify(S)); else localStorage.removeItem(KEY); } catch (e) {} }
 
@@ -626,7 +630,8 @@ function coverHtml() {
     '<div class="title-wrap"><div class="kick">Космическая экспедиция по логике · Тема 3</div><h1 class="logo">ЛОГОС-1</h1>' +
     '<div class="tagline">Понятие · Суждение · Умозаключение</div></div>' +
     '<div class="card"><p class="lead">Экипаж ждёт четвёртого члена. Им будете вы.</p>' +
-    '<label class="fl">Фамилия и имя</label><input id="inName" class="inp" autocomplete="off" value="' + esc(draft.name) + '" placeholder="Например, Иванова Анна">' +
+    '<label class="fl">Фамилия</label><input id="inSur" class="inp" autocomplete="off" value="' + esc(draft.sur) + '" placeholder="Иванова">' +
+    '<label class="fl">Имя</label><input id="inName" class="inp" autocomplete="off" value="' + esc(draft.name) + '" placeholder="Анна">' +
     '<label class="fl">Группа</label><input id="inGroup" class="inp" autocomplete="off" value="' + esc(draft.group) + '" placeholder="Номер группы">' +
     (draft.err ? '<div class="err">' + esc(draft.err) + '</div>' : '') +
     '<button class="btn big" data-act="start">На борт →</button>' +
@@ -738,7 +743,7 @@ function qText(it) { return it.t === "euler" ? "A: " + it.A + " / B: " + it.B : 
 function finalHtml() {
   if (!S.t1) { S.t1 = Date.now(); save(); }
   var sc = score(), pct = Math.round(sc / TOTAL * 1000) / 10, m = gradeOf(pct), mins = Math.max(1, Math.round((S.t1 - S.t0) / 60000));
-  gFinish("logos1", sc);
+  gFinish("logos1", sc, TOTAL);
   var h = '<div class="scr"><div class="hero"><div class="hero-t"><div class="kick">Экспедиция завершена · ' + esc(S.name) + ', гр. ' + esc(S.group) + '</div><h2>Возвращение на Землю</h2></div></div><div class="card">';
   h += '<div class="mark m' + m[1] + '"><div class="mark-n">' + m[1] + '</div><div><div class="mark-s">' + sc + ' из ' + TOTAL + ' баллов · ' + pct + '%</div><div class="mark-t">' + m[2] + '</div></div></div>' +
     gCard();
@@ -763,18 +768,19 @@ document.addEventListener("click", function (ev) {
   if (!el || el === document || el.disabled) return;
   var act = el.getAttribute("data-act"), v = el.getAttribute("data-v"), top = false;
   if (act === "start") {
+    draft.sur = (document.getElementById("inSur").value || "").replace(/^\s+|\s+$/g, "");
     draft.name = (document.getElementById("inName").value || "").replace(/^\s+|\s+$/g, "");
     draft.group = (document.getElementById("inGroup").value || "").replace(/^\s+|\s+$/g, "");
-    if (draft.name.length < 3) { draft.err = "Впишите фамилию и имя."; render(); return; }
+    if (draft.sur.length < 2 || !draft.name) { draft.err = "Впишите фамилию и имя."; render(); return; }
     if (!draft.group) { draft.err = "Впишите группу."; render(); return; }
-    S = { name: draft.name, group: draft.group, seed: (hashStr(draft.name.toLowerCase() + "|" + draft.group) ^ (Date.now() & 0xffff)) >>> 0, cur: 1, ans: {}, t0: Date.now() };
+    S = { surname: draft.sur, name: draft.sur + " " + draft.name, group: draft.group, seed: (hashStr((draft.sur + draft.name).toLowerCase() + "|" + draft.group) ^ (Date.now() & 0xffff)) >>> 0, cur: 1, ans: {}, t0: Date.now() };
     STEPS = buildSteps(); top = true;
   } else if (act === "next") { if (S.cur < STEPS.length - 1) S.cur++; top = true; }
   else if (act === "reset") { ui.reset = true; ui.pwErr = ""; }
   else if (act === "rcancel") { ui.reset = false; }
   else if (act === "rgo") {
     var pw = document.getElementById("inPw").value;
-    if (hashStr(pw) === PASS_HASH) { S = null; STEPS = null; ui = {}; draft = { name: "", group: "", err: "" }; save(); render(); window.scrollTo(0, 0); return; }
+    if (hashStr(pw) === PASS_HASH) { S = null; STEPS = null; ui = {}; draft = { sur: "", name: "", group: "", err: "" }; save(); render(); window.scrollTo(0, 0); return; }
     ui.pwErr = "Неверный пароль.";
   } else {
     var step = STEPS[S.cur]; if (step.k !== "item" || S.ans[step.key]) return;
@@ -793,7 +799,7 @@ document.addEventListener("click", function (ev) {
   save(); render();
   if (top) window.scrollTo(0, 0);
 });
-document.addEventListener("input", function (ev) { if (ev.target.id === "inName") draft.name = ev.target.value; if (ev.target.id === "inGroup") draft.group = ev.target.value; });
+document.addEventListener("input", function (ev) { if (ev.target.id === "inSur") draft.sur = ev.target.value; if (ev.target.id === "inName") draft.name = ev.target.value; if (ev.target.id === "inGroup") draft.group = ev.target.value; });
 load(); render(); gInit();
 
 </script>
